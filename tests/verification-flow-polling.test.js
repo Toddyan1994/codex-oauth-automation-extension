@@ -43,7 +43,7 @@ test('verification flow keeps 2925 polling cadence in the default payload', () =
   assert.equal(step8Payload.intervalMs, 15000);
 });
 
-test('verification flow only enables 2925 target email matching in receive mode', () => {
+test('verification flow only enables 2925 target email matching in provide mode', () => {
   const helpers = api.createVerificationFlowHelpers({
     addLog: async () => {},
     chrome: { tabs: { update: async () => {} } },
@@ -82,8 +82,8 @@ test('verification flow only enables 2925 target email matching in receive mode'
     mail2925Mode: 'receive',
   });
 
-  assert.equal(providePayload.mail2925MatchTargetEmail, false);
-  assert.equal(receivePayload.mail2925MatchTargetEmail, true);
+  assert.equal(providePayload.mail2925MatchTargetEmail, true);
+  assert.equal(receivePayload.mail2925MatchTargetEmail, false);
 });
 
 test('verification flow runs beforeSubmit hook before filling the code', async () => {

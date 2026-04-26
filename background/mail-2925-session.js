@@ -538,6 +538,20 @@
       }
 
       if (!forceRelogin && !isMail2925LoginUrl(openedUrl) && !normalizedExpectedMailboxEmail) {
+        // Ensure the content script is ready before returning.
+        // reuseOrCreateTab sets ready=false and injects scripts, but a race
+        // between its setState(ready=false) and the CONTENT_SCRIPT_READY
+        // handler's registerTab(ready=true) can leave ready=false permanently,
+        // causing subsequent POLL_EMAIL messages to be queued indefinitely.
+        if (typeof ensureContentScriptReadyOnTab === 'function') {
+          await ensureContentScriptReadyOnTab(MAIL2925_SOURCE, tabId, {
+            inject: MAIL2925_INJECT,
+            injectSource: MAIL2925_INJECT_SOURCE,
+            timeoutMs: 20000,
+            retryDelayMs: 800,
+            logMessage: '2925：等待邮箱页内容脚本就绪...',
+          });
+        }
         await addLog('2925：当前邮箱页未跳转到登录页，将直接复用已登录会话。', 'info');
         return buildSuccessPayload();
       }

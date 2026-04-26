@@ -319,6 +319,7 @@ return {
 test('handlePollEmail skips explicit mismatched target emails when receive-mode matching is enabled', async () => {
   const bundle = [
     extractFunction('extractEmails'),
+    extractFunction('extractVerpDecodedEmails'),
     extractFunction('emailMatchesTarget'),
     extractFunction('getTargetEmailMatchState'),
     extractFunction('normalizeMinuteTimestamp'),
@@ -403,7 +404,7 @@ return {
   });
 
   assert.equal(result.code, '445566');
-  assert.deepEqual(api.getReadAndDeleteCalls(), ['mail-2']);
+  assert.deepEqual(api.getReadAndDeleteCalls(), ['mail-1', 'mail-2']);
 });
 
 test('handlePollEmail only accepts 2925 mails inside the fixed lookback window', async () => {

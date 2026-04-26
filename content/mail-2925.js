@@ -699,6 +699,25 @@ function extractEmails(text = '') {
   return [...new Set(matches.map((item) => item.toLowerCase()))];
 }
 
+function extractVerpDecodedEmails(text = '') {
+  const normalized = String(text || '').toLowerCase();
+  const results = [];
+  // Pattern 1: double-equals VERP in caf_ forwarding paths
+  // e.g. caf_=todd202502=2925.com@pride.hofstra.edu → todd202502@2925.com
+  const verpDoubleRegex = /=([a-z0-9._%+-]+)=([a-z0-9.-]+\.[a-z]{2,})@/g;
+  let match;
+  while ((match = verpDoubleRegex.exec(normalized)) !== null) {
+    results.push(`${match[1]}@${match[2]}`);
+  }
+  // Pattern 2: single-equals VERP in bounce paths
+  // e.g. bounce+xxx-todd202502w2hdph=2925.com@tm1.openai.com → todd202502w2hdph@2925.com
+  const verpSingleRegex = /[^a-z0-9._%+-]([a-z0-9._%+-]+)=([a-z0-9.-]+\.[a-z]{2,})@/g;
+  while ((match = verpSingleRegex.exec(normalized)) !== null) {
+    results.push(`${match[1]}@${match[2]}`);
+  }
+  return [...new Set(results)];
+}
+
 function emailMatchesTarget(candidate, targetEmail) {
   const normalizedCandidate = String(candidate || '').trim().toLowerCase();
   const normalizedTarget = String(targetEmail || '').trim().toLowerCase();
@@ -717,12 +736,22 @@ function getTargetEmailMatchState(text, targetEmail) {
   }
 
   const extractedEmails = extractEmails(normalizedText);
-  if (!extractedEmails.length) {
+  const verpDecodedEmails = extractVerpDecodedEmails(normalizedText);
+  const allCandidates = [...extractedEmails, ...verpDecodedEmails];
+
+  // Also check VERP-encoded form: forwarded emails encode @ as = in paths
+  // e.g. target todd202502@2925.com appears as todd202502=2925.com in VERP paths
+  const verpEncodedTarget = normalizedTarget.replace('@', '=');
+  if (normalizedText.includes(verpEncodedTarget)) {
+    return { matches: true, hasExplicitEmail: true };
+  }
+
+  if (!allCandidates.length) {
     return { matches: true, hasExplicitEmail: false };
   }
 
   return {
-    matches: extractedEmails.some((candidate) => emailMatchesTarget(candidate, normalizedTarget)),
+    matches: allCandidates.some((candidate) => emailMatchesTarget(candidate, normalizedTarget)),
     hasExplicitEmail: true,
   };
 }
@@ -1117,11 +1146,15 @@ async function handlePollEmail(step, payload) {
         if (!matchesMailFilters(previewText, senderFilters, subjectFilters)) {
           continue;
         }
-        const previewTargetState = mail2925MatchTargetEmail
-          ? getTargetEmailMatchState(previewText, targetEmail)
-          : { matches: true, hasExplicitEmail: false };
-        if (mail2925MatchTargetEmail && previewTargetState.hasExplicitEmail && !previewTargetState.matches) {
-          continue;
+        // Preview text typically only has sender + subject, not the recipient address.
+        // When targetEmail is a custom-pool address forwarded to 2925, the preview
+        // never contains the target, so a hard filter here would skip valid mails.
+        // Use preview target check only as a soft hint (log), never skip at preview.
+        if (mail2925MatchTargetEmail) {
+          const previewTargetState = getTargetEmailMatchState(previewText, targetEmail);
+          if (previewTargetState.hasExplicitEmail && !previewTargetState.matches) {
+            log(`步骤 ${step}：预览阶段邮箱不匹配，但仍打开邮件以检查完整内容`, 'info');
+          }
         }
 
         const previewCode = extractVerificationCode(previewText, strictChatGPTCodeOnly);

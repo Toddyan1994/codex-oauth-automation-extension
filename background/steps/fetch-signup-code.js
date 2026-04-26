@@ -36,6 +36,15 @@
         }
       }
 
+      // In receive mode without account pool, any logged-in 2925 account works as a
+      // receiver for forwarded emails. The base email may be a custom-pool forwarding
+      // address (e.g. user@pride.hofstra.edu) which is NOT the 2925 mailbox account.
+      // Skip the mailbox email consistency check by returning empty string.
+      const isReceiveMode = String(state?.mail2925Mode || '').trim().toLowerCase() === 'receive';
+      if (isReceiveMode) {
+        return '';
+      }
+
       return String(state?.mail2925BaseEmail || '').trim().toLowerCase();
     }
 
