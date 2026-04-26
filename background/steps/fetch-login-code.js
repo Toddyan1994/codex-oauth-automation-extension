@@ -27,6 +27,7 @@
       setState,
       shouldUseCustomRegistrationEmail,
       STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS,
+      MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS,
       STEP7_MAIL_POLLING_RECOVERY_MAX_ATTEMPTS,
       throwIfStopped,
     } = deps;
@@ -194,9 +195,9 @@
         getRemainingTimeMs: getStep8RemainingTimeResolver(state?.oauthUrl || ''),
         requestFreshCodeFirst: false,
         targetEmail: fixedTargetEmail,
-        resendIntervalMs: (mail.provider === HOTMAIL_PROVIDER || mail.provider === '2925')
-          ? 0
-          : STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS,
+        resendIntervalMs: mail.provider === '2925'
+          ? MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS
+          : (mail.provider === HOTMAIL_PROVIDER ? 0 : STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS),
       });
     }
 

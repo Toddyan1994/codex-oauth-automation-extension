@@ -22,6 +22,7 @@
       sendToContentScriptResilient,
       shouldUseCustomRegistrationEmail,
       STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS,
+      MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS,
       throwIfStopped,
     } = deps;
 
@@ -166,9 +167,9 @@
         sessionKey: verificationSessionKey,
         disableTimeBudgetCap: mail.provider === '2925',
         requestFreshCodeFirst: shouldRequestFreshCodeFirst,
-        resendIntervalMs: (mail.provider === HOTMAIL_PROVIDER || mail.provider === '2925')
-          ? 0
-          : STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS,
+        resendIntervalMs: mail.provider === '2925'
+          ? MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS
+          : (mail.provider === HOTMAIL_PROVIDER ? 0 : STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS),
       });
     }
 

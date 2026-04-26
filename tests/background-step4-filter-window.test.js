@@ -48,6 +48,7 @@ test('step 4 passes a fixed 10-minute lookback window to 2925 mailbox polling', 
     sendToContentScriptResilient: async () => ({}),
     shouldUseCustomRegistrationEmail: () => false,
     STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS: 25000,
+    MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS: 20000,
     throwIfStopped: () => {},
   });
 
@@ -67,7 +68,7 @@ test('step 4 passes a fixed 10-minute lookback window to 2925 mailbox polling', 
     { tabId: 1, payload: { active: true } },
   ]);
   assert.equal(capturedOptions.filterAfterTimestamp, 100000);
-  assert.equal(capturedOptions.resendIntervalMs, 0);
+  assert.equal(capturedOptions.resendIntervalMs, 20000);
 });
 
 test('step 4 does not request a fresh code first for Cloudflare temp mail', async () => {

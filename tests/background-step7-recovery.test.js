@@ -89,7 +89,7 @@ test('step 8 submits login verification directly without replaying step 7', asyn
   ]);
 });
 
-test('step 8 uses a fixed 10-minute lookback window and disables resend interval for 2925 mailbox polling', async () => {
+test('step 8 uses a fixed 10-minute lookback window and 20-second resend interval for 2925 mailbox polling', async () => {
   let capturedOptions = null;
   let ensureCalls = 0;
   let ensureOptions = null;
@@ -148,6 +148,7 @@ test('step 8 uses a fixed 10-minute lookback window and disables resend interval
     setStepStatus: async () => {},
     shouldUseCustomRegistrationEmail: () => false,
     STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS: 25000,
+    MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS: 20000,
     STEP7_MAIL_POLLING_RECOVERY_MAX_ATTEMPTS: 8,
     throwIfStopped: () => {},
   });
@@ -180,7 +181,7 @@ test('step 8 uses a fixed 10-minute lookback window and disables resend interval
     { tabId: 1, payload: { active: true } },
   ]);
   assert.equal(capturedOptions.filterAfterTimestamp, 300000);
-  assert.equal(capturedOptions.resendIntervalMs, 0);
+  assert.equal(capturedOptions.resendIntervalMs, 20000);
   assert.equal(capturedOptions.targetEmail, '');
   assert.equal(capturedOptions.beforeSubmit, undefined);
   assert.equal(typeof capturedOptions.getRemainingTimeMs, 'function');

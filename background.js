@@ -5797,6 +5797,7 @@ const VERIFICATION_POLL_MAX_ROUNDS = 5;
 const STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS = 25000;
 const MAIL_2925_VERIFICATION_MAX_ATTEMPTS = 15;
 const MAIL_2925_VERIFICATION_INTERVAL_MS = 15000;
+const MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS = 20000;
 const AUTO_STEP_DELAYS = {
   1: 2000,
   2: 2000,
@@ -6526,6 +6527,7 @@ const verificationFlowHelpers = self.MultiPageBackgroundVerificationFlow?.create
   LUCKMAIL_PROVIDER,
   MAIL_2925_VERIFICATION_INTERVAL_MS,
   MAIL_2925_VERIFICATION_MAX_ATTEMPTS,
+  MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS,
   pollCloudflareTempEmailVerificationCode,
   pollHotmailVerificationCode,
   pollLuckmailVerificationCode,
@@ -6613,6 +6615,7 @@ const step4Executor = self.MultiPageBackgroundStep4?.createStep4Executor({
   sendToContentScriptResilient,
   shouldUseCustomRegistrationEmail,
   STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS,
+  MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS,
   throwIfStopped,
 });
 const step5Executor = self.MultiPageBackgroundStep5?.createStep5Executor({
@@ -6667,6 +6670,7 @@ const step8Executor = self.MultiPageBackgroundStep8?.createStep8Executor({
   shouldUseCustomRegistrationEmail,
   sleepWithStop,
   STANDARD_MAIL_VERIFICATION_RESEND_INTERVAL_MS,
+  MAIL_2925_VERIFICATION_RESEND_INTERVAL_MS,
   STEP7_MAIL_POLLING_RECOVERY_MAX_ATTEMPTS,
   throwIfStopped,
 });
