@@ -1,6 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const {
+  normalizeIcloudForwardMailProvider,
+  normalizeIcloudTargetMailboxType,
+} = require('../mail-provider-utils.js');
 
 const source = fs.readFileSync('background.js', 'utf8');
 
@@ -155,6 +159,8 @@ function findIcloudAliasByEmail(aliases, email) {
 function getErrorMessage(error) {
   return String(typeof error === 'string' ? error : error?.message || '');
 }
+const normalizeIcloudTargetMailboxType = overrides.normalizeIcloudTargetMailboxType;
+const normalizeIcloudForwardMailProvider = overrides.normalizeIcloudForwardMailProvider;
 
 ${bundle}
 
@@ -175,9 +181,16 @@ test('normalizeEmailGenerator and label support icloud', () => {
 });
 
 test('normalizePersistentSettingValue handles icloud settings', () => {
-  const api = createApi();
+  const api = createApi({
+    normalizeIcloudTargetMailboxType,
+    normalizeIcloudForwardMailProvider,
+  });
   assert.equal(api.normalizePersistentSettingValue('icloudHostPreference', 'icloud.com'), 'icloud.com');
   assert.equal(api.normalizePersistentSettingValue('icloudHostPreference', 'bad-host'), 'auto');
+  assert.equal(api.normalizePersistentSettingValue('icloudTargetMailboxType', 'forward-mailbox'), 'forward-mailbox');
+  assert.equal(api.normalizePersistentSettingValue('icloudTargetMailboxType', 'wrong'), 'icloud-inbox');
+  assert.equal(api.normalizePersistentSettingValue('icloudForwardMailProvider', 'GMAIL'), 'gmail');
+  assert.equal(api.normalizePersistentSettingValue('icloudForwardMailProvider', 'unknown'), 'qq');
   assert.equal(api.normalizePersistentSettingValue('autoDeleteUsedIcloudAlias', 1), true);
   assert.equal(api.normalizePersistentSettingValue('verificationResendCount', '6'), 6);
   assert.equal(api.normalizePersistentSettingValue('verificationResendCount', 99), 20);
@@ -276,4 +289,207 @@ test('finalizeIcloudAliasAfterSuccessfulFlow ignores non-icloud flows', async ()
 
   assert.deepEqual(result, { handled: false, deleted: false });
   assert.equal(api.calls.setUsed.length, 0);
+});
+
+test('icloudRequest retries retryable network failures and then succeeds', async () => {
+  const bundle = [
+    extractFunction('getIcloudRequestTargetLabel'),
+    extractFunction('getIcloudRetryDelay'),
+    extractFunction('isIcloudRetryableStatus'),
+    extractFunction('isIcloudRetryableError'),
+    extractFunction('icloudRequest'),
+  ].join('\n');
+
+  const api = new Function(`
+const ICLOUD_REQUEST_TIMEOUT_MS = 15000;
+const ICLOUD_RETRY_DELAYS_MS = [1, 1, 1];
+const activeIcloudRequestControllers = new Set();
+let stopRequested = false;
+const logs = [];
+let fetchCalls = 0;
+
+function throwIfStopped() {
+  if (stopRequested) {
+    throw new Error('流程已被用户停止。');
+  }
+}
+async function sleepWithStop() {}
+async function addLog(message, level) {
+  logs.push({ message, level });
+}
+function getErrorMessage(error) {
+  return String(typeof error === 'string' ? error : error?.message || '');
+}
+function normalizeText(value) {
+  return String(value || '').replace(/\\s+/g, ' ').trim();
+}
+async function fetch() {
+  fetchCalls += 1;
+  if (fetchCalls === 1) {
+    throw new Error('Failed to fetch');
+  }
+  return {
+    ok: true,
+    text: async () => JSON.stringify({ success: true }),
+  };
+}
+${bundle}
+return {
+  icloudRequest,
+  readFetchCalls: () => fetchCalls,
+  readLogs: () => logs,
+};
+`)();
+
+  const result = await api.icloudRequest('GET', 'https://p67-maildomainws.icloud.com/v2/hme/list', {
+    maxAttempts: 2,
+    logRetries: true,
+    retryLabel: '加载 iCloud 别名列表',
+  });
+
+  assert.deepEqual(result, { success: true });
+  assert.equal(api.readFetchCalls(), 2);
+  assert.equal(api.readLogs().length, 1);
+});
+
+test('icloudRequest does not retry non-retryable 403 responses', async () => {
+  const bundle = [
+    extractFunction('getIcloudRequestTargetLabel'),
+    extractFunction('getIcloudRetryDelay'),
+    extractFunction('isIcloudRetryableStatus'),
+    extractFunction('isIcloudRetryableError'),
+    extractFunction('icloudRequest'),
+  ].join('\n');
+
+  const api = new Function(`
+const ICLOUD_REQUEST_TIMEOUT_MS = 15000;
+const ICLOUD_RETRY_DELAYS_MS = [1, 1, 1];
+const activeIcloudRequestControllers = new Set();
+let stopRequested = false;
+let fetchCalls = 0;
+
+function throwIfStopped() {
+  if (stopRequested) {
+    throw new Error('流程已被用户停止。');
+  }
+}
+async function sleepWithStop() {}
+async function addLog() {}
+function getErrorMessage(error) {
+  return String(typeof error === 'string' ? error : error?.message || '');
+}
+function normalizeText(value) {
+  return String(value || '').replace(/\\s+/g, ' ').trim();
+}
+async function fetch() {
+  fetchCalls += 1;
+  return {
+    ok: false,
+    status: 403,
+    text: async () => 'forbidden',
+  };
+}
+${bundle}
+return {
+  icloudRequest,
+  readFetchCalls: () => fetchCalls,
+};
+`)();
+
+  await assert.rejects(
+    api.icloudRequest('GET', 'https://p67-maildomainws.icloud.com/v2/hme/list', {
+      maxAttempts: 3,
+      logRetries: true,
+    }),
+    /status 403/i
+  );
+  assert.equal(api.readFetchCalls(), 1);
+});
+
+test('fetchIcloudHideMyEmail treats reserve network failure as success when alias appears in the refreshed list', async () => {
+  const bundle = [
+    extractFunction('getIcloudRequestTargetLabel'),
+    extractFunction('getIcloudRetryDelay'),
+    extractFunction('isIcloudRetryableStatus'),
+    extractFunction('isIcloudRetryableError'),
+    extractFunction('fetchIcloudHideMyEmail'),
+  ].join('\n');
+
+  const api = new Function(`
+const logs = [];
+const selectedEmails = [];
+const broadcasts = [];
+let listCallCount = 0;
+const ICLOUD_REQUEST_TIMEOUT_MS = 15000;
+const ICLOUD_WRITE_MAX_ATTEMPTS = 2;
+
+function withIcloudLoginHelp(_label, action) {
+  return action();
+}
+function throwIfStopped() {}
+async function addLog(message, level = 'info') {
+  logs.push({ message, level });
+}
+async function resolveIcloudPremiumMailService() {
+  return {
+    serviceUrl: 'https://p67-maildomainws.icloud.com',
+    setupUrl: 'https://setup.icloud.com/setup/ws/1',
+  };
+}
+function getErrorMessage(error) {
+  return String(typeof error === 'string' ? error : error?.message || '');
+}
+async function loadNormalizedIcloudAliases() {
+  listCallCount += 1;
+  if (listCallCount === 1) {
+    return { aliases: [], serviceUrl: 'https://p67-maildomainws.icloud.com' };
+  }
+  return {
+    aliases: [
+      { email: 'fresh@icloud.com', active: true, used: false, preserved: false },
+    ],
+    serviceUrl: 'https://p67-maildomainws.icloud.com',
+  };
+}
+function pickReusableIcloudAlias() {
+  return null;
+}
+async function icloudRequest(method, url) {
+  if (method === 'POST' && /\\/v1\\/hme\\/generate$/.test(url)) {
+    return { success: true, result: { hme: 'fresh@icloud.com' } };
+  }
+  if (method === 'POST' && /\\/v1\\/hme\\/reserve$/.test(url)) {
+    const error = new Error('Failed to fetch');
+    error.networkFailure = true;
+    throw error;
+  }
+  throw new Error('unexpected request');
+}
+function getIcloudAliasLabel() {
+  return 'MultiPage 2026-04-26';
+}
+async function setEmailState(email) {
+  selectedEmails.push(email);
+}
+function broadcastIcloudAliasesChanged(payload) {
+  broadcasts.push(payload);
+}
+function findIcloudAliasByEmail(aliases, email) {
+  return (aliases || []).find((alias) => String(alias.email || '').toLowerCase() === String(email || '').toLowerCase()) || null;
+}
+${bundle}
+return {
+  fetchIcloudHideMyEmail,
+  readLogs: () => logs,
+  readSelectedEmails: () => selectedEmails,
+  readBroadcasts: () => broadcasts,
+};
+`)();
+
+  const email = await api.fetchIcloudHideMyEmail({ generateNew: true });
+
+  assert.equal(email, 'fresh@icloud.com');
+  assert.deepEqual(api.readSelectedEmails(), ['fresh@icloud.com']);
+  assert.deepEqual(api.readBroadcasts(), [{ reason: 'created', email: 'fresh@icloud.com' }]);
+  assert.match(api.readLogs().map((entry) => entry.message).join('\n'), /按保留成功处理/);
 });
