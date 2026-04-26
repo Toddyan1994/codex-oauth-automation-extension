@@ -23,7 +23,7 @@ test('ensureMail2925MailboxSession reuses current mailbox page without sending l
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: 'https://2925.com/#/mailList' }),
+        get: async () => ({ id: 9, url: 'https://www.2925.com/#/mailList' }),
       },
       cookies: {
         getAll: async () => [],
@@ -86,7 +86,7 @@ test('ensureMail2925MailboxSession does not require account-pool accounts when p
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: 'https://2925.com/#/mailList' }),
+        get: async () => ({ id: 9, url: 'https://www.2925.com/#/mailList' }),
       },
       cookies: {
         getAll: async () => [],
@@ -150,7 +150,7 @@ test('ensureMail2925MailboxSession stops immediately when login page is detected
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: 'https://2925.com/login/' }),
+        get: async () => ({ id: 9, url: 'https://www.2925.com/login/' }),
       },
       cookies: {
         getAll: async () => [],
@@ -218,7 +218,7 @@ test('ensureMail2925MailboxSession logs in when login page is detected and accou
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: 'https://2925.com/login/' }),
+        get: async () => ({ id: 9, url: 'https://www.2925.com/login/' }),
       },
       cookies: {
         getAll: async () => [],
@@ -275,7 +275,7 @@ test('ensureMail2925MailboxSession recovers after login-page navigation reload b
     ]),
     currentMail2925AccountId: 'acc-1',
   };
-  let tabUrl = 'https://2925.com/login/';
+  let tabUrl = 'https://www.2925.com/login/';
   const events = {
     logs: [],
     readyCalls: 0,
@@ -330,7 +330,7 @@ test('ensureMail2925MailboxSession recovers after login-page navigation reload b
     upsertMail2925AccountInList: mail2925Utils.upsertMail2925AccountInList,
     waitForTabComplete: async () => {
       events.waitCompleteCalls += 1;
-      tabUrl = 'https://2925.com/#/mailList';
+      tabUrl = 'https://www.2925.com/#/mailList';
       return { id: 9, url: tabUrl, status: 'complete' };
     },
   });
@@ -348,7 +348,7 @@ test('ensureMail2925MailboxSession recovers after login-page navigation reload b
   assert.equal(result.result.loggedIn, true);
   const combinedLogs = events.logs.map(({ message }) => message).join('\n');
   assert.match(combinedLogs, /登录提交后页面发生跳转或重载/);
-  assert.match(combinedLogs, /登录跳转恢复后当前标签地址：https:\/\/2925\.com\/#\/mailList/);
+  assert.match(combinedLogs, /登录跳转恢复后当前标签地址：https:\/\/www\.2925\.com\/#\/mailList/);
   assert.match(combinedLogs, /页面恢复完成，正在重新确认登录态/);
 });
 
@@ -369,7 +369,7 @@ test('ensureMail2925MailboxSession relogs with selected account when mailbox pag
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: openedUrls.at(-1) || 'https://2925.com/#/mailList' }),
+        get: async () => ({ id: 9, url: openedUrls.at(-1) || 'https://www.2925.com/#/mailList' }),
       },
       cookies: {
         getAll: async () => [],
@@ -417,7 +417,7 @@ test('ensureMail2925MailboxSession relogs with selected account when mailbox pag
     sleepWithStop: async () => {},
     throwIfStopped: () => {},
     upsertMail2925AccountInList: mail2925Utils.upsertMail2925AccountInList,
-    waitForTabUrlMatch: async () => ({ url: 'https://2925.com/login/' }),
+    waitForTabUrlMatch: async () => ({ url: 'https://www.2925.com/login/' }),
   });
 
   const result = await manager.ensureMail2925MailboxSession({
@@ -430,8 +430,8 @@ test('ensureMail2925MailboxSession relogs with selected account when mailbox pag
 
   assert.equal(result.result.loggedIn, true);
   assert.deepStrictEqual(openedUrls, [
-    'https://2925.com/#/mailList',
-    'https://2925.com/login/',
+    'https://www.2925.com/#/mailList',
+    'https://www.2925.com/login/',
   ]);
   assert.equal(sendPayloads.length, 2);
   assert.equal(sendPayloads[0].allowLoginWhenOnLoginPage, true);
@@ -454,7 +454,7 @@ test('ensureMail2925MailboxSession stops when mailbox page email mismatches and 
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: 'https://2925.com/#/mailList' }),
+        get: async () => ({ id: 9, url: 'https://www.2925.com/#/mailList' }),
       },
       cookies: {
         getAll: async () => [],
@@ -526,7 +526,7 @@ test('ensureMail2925MailboxSession does not crash when mailbox page is reused bu
     broadcastDataUpdate: () => {},
     chrome: {
       tabs: {
-        get: async () => ({ id: 9, url: 'https://2925.com/#/mailList' }),
+        get: async () => ({ id: 9, url: 'https://www.2925.com/#/mailList' }),
       },
       cookies: {
         getAll: async () => [],

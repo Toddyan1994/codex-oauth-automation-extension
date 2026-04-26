@@ -121,7 +121,7 @@ test('step 8 uses a fixed 10-minute lookback window and 20-second resend interva
       provider: '2925',
       label: '2925 邮箱',
       source: 'mail-2925',
-      url: 'https://2925.com',
+      url: 'https://www.2925.com',
       navigateOnReuse: false,
     }),
     getState: async () => ({

@@ -5,7 +5,7 @@ const mail2925Utils = require('../mail2925-utils.js');
 
 test('background mail2925 session uses /login/ as relogin entry url', () => {
   const source = fs.readFileSync('background/mail-2925-session.js', 'utf8');
-  assert.match(source, /const MAIL2925_LOGIN_URL = 'https:\/\/2925\.com\/login\/';/);
+  assert.match(source, /const MAIL2925_LOGIN_URL = 'https:\/\/www\.2925\.com\/login\/';/);
 });
 
 test('background mail2925 session keeps a long login response timeout and a separate page-recovery window', () => {
@@ -76,7 +76,7 @@ test('ensureMail2925MailboxSession waits 3 seconds before and after opening logi
     },
     throwIfStopped: () => {},
     upsertMail2925AccountInList: mail2925Utils.upsertMail2925AccountInList,
-    waitForTabUrlMatch: async () => ({ url: 'https://2925.com/login/' }),
+    waitForTabUrlMatch: async () => ({ url: 'https://www.2925.com/login/' }),
   });
 
   await manager.ensureMail2925MailboxSession({
@@ -85,7 +85,7 @@ test('ensureMail2925MailboxSession waits 3 seconds before and after opening logi
     actionLabel: '步骤 4：确认 2925 邮箱登录态',
   });
 
-  assert.deepStrictEqual(events.openedUrls, ['https://2925.com/login/']);
+  assert.deepStrictEqual(events.openedUrls, ['https://www.2925.com/login/']);
   assert.deepStrictEqual(events.sleeps, [3000, 3000]);
   assert.equal(events.readyCalls, 1);
 });

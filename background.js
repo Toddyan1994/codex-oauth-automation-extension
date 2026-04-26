@@ -6946,7 +6946,7 @@ function getMailConfig(state) {
     return {
       provider: '2925',
       source: 'mail-2925',
-      url: 'https://2925.com/#/mailList',
+      url: 'https://www.2925.com/#/mailList',
       label: '2925 邮箱',
       inject: ['content/utils.js', 'content/mail-2925.js'],
       injectSource: 'mail-2925',

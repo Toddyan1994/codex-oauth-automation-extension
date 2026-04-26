@@ -619,7 +619,7 @@ const MAIL_PROVIDER_LOGIN_CONFIGS = {
   },
   '2925': {
     label: '2925 邮箱',
-    url: 'https://2925.com/#/mailList',
+    url: 'https://www.2925.com/#/mailList',
   },
 };
 
