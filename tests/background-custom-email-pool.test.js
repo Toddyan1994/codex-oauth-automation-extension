@@ -92,7 +92,7 @@ test('background normalizes custom email pool input and keeps order', () => {
 
   assert.deepEqual(
     api.normalizeCustomEmailPool(' Foo@Example.com \ninvalid\nbar@example.com；baz@example.com '),
-    ['foo@example.com', 'bar@example.com', 'baz@example.com']
+    ['Foo@Example.com', 'bar@example.com', 'baz@example.com']
   );
 });
 

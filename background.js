@@ -698,7 +698,7 @@ function normalizeCustomEmailPool(value = []) {
     : String(value || '').split(/[\r\n,，;；]+/);
 
   return source
-    .map((item) => String(item || '').trim().toLowerCase())
+    .map((item) => String(item || '').trim())
     .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
 }
 

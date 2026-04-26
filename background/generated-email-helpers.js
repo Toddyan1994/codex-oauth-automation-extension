@@ -195,7 +195,7 @@
       throwIfStopped();
       const latestState = state || await getState();
       const requestedIndex = Math.max(0, Math.floor(Number(options.poolIndex) || 0));
-      const email = String(getCustomEmailPoolEmail?.(latestState, requestedIndex + 1) || '').trim().toLowerCase();
+      const email = String(getCustomEmailPoolEmail?.(latestState, requestedIndex + 1) || '').trim();
       if (!email) {
         throw new Error(
           requestedIndex > 0
